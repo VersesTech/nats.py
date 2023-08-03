@@ -5,9 +5,54 @@ on:
       - main
 jobs:
   release:
-    uses: VersesTech/github-actions/.github/workflows/semantic-release.yaml@main
-    secrets: inherit
-    with:
-      plugins: "@semantic-release/changelog @semantic-release/git conventional-changelog-conventionalcommits @semantic-release/exec"
-      enable-python: true
-      enable-pypi-publish: true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          token: ${{ steps.generate_token.outputs.token }}
+      
+      - name: Checkout semantic-release-exec-scripts
+        uses: actions/checkout@v3
+        with:
+          repository: VersesTech/semantic-release-exec-scripts
+          path: ${{ inputs.working-directory }}/semantic-release-exec-scripts
+          fetch-depth: 0
+          token: ${{ steps.generate_token.outputs.token }}
+
+      - name: Configure AWS credentials for AWS CodeArtifact
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.ECR_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.ECR_KEY }}
+          # Note: CodeArtifact is in us-west-2, NOT us-west-1
+          aws-region: us-west-2
+          mask-aws-account-id: false
+          role-to-assume: arn:aws:iam::518625631402:role/github-codeartifact-write-role
+          role-skip-session-tagging: true
+          role-duration-seconds: 1200
+      
+      - name: Setup Python for Python projects
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      
+      - name: Install Poetry
+        run: curl -sSL https://install.python-poetry.org | python3 -
+      
+      - name: Build
+        run: |-
+          poetry build
+      
+      - name: Publish
+        run: |-
+          repo_url="$(aws codeartifact get-repository-endpoint --domain-owner ${AWS_ACCOUNT_ID} --domain "${AWS_CODEARTIFACT_REPO_DOMAIN}" --repository "${AWS_CODEARTIFACT_REPO_NAME}" --format pypi --query 'repositoryEndpoint' --output text)"
+          repo_password="$(aws codeartifact get-authorization-token --domain-owner ${AWS_ACCOUNT_ID} --domain ${AWS_CODEARTIFACT_REPO_DOMAIN} --query 'authorizationToken' --output text)"
+
+          poetry config repositories.verses-internal "${repo_url}"
+          poetry publish --repository verses-internal --username aws --password "${repo_password}"
+        env:
+          AWS_ACCOUNT_ID: '518625631402'
+          AWS_CODEARTIFACT_REPO_DOMAIN: versestech
+          AWS_CODEARTIFACT_REPO_NAME: pypi-internal
