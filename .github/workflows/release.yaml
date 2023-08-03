@@ -1,0 +1,13 @@
+name: Release
+on:
+  push:
+    branches:
+      - main
+jobs:
+  release:
+    uses: VersesTech/github-actions/.github/workflows/semantic-release.yaml@main
+    secrets: inherit
+    with:
+      plugins: "@semantic-release/changelog @semantic-release/git conventional-changelog-conventionalcommits @semantic-release/exec"
+      enable-python: true
+      enable-pypi-publish: true

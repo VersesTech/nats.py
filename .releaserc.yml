@@ -1,0 +1,18 @@
+---
+# See https://semantic-release.gitbook.io/semantic-release/usage/configuration
+branches: ['main']
+tagFormat: '${version}' # without this, the tag is prefixed with a 'v'
+preset: conventionalcommits
+plugins:
+- - "@semantic-release/commit-analyzer"
+- - "@semantic-release/release-notes-generator"
+- - "@semantic-release/changelog"
+  - changelogFile: CHANGELOG.md
+- - "@semantic-release/exec"
+  - prepareCmd: "./semantic-release-exec-scripts/python-poetry/prepare.sh ${nextRelease.version} ${branch.name} ${commits.length} ${Date.now()}"
+    publishCmd: "./semantic-release-exec-scripts/python-poetry/publish.sh ${nextRelease.version} ${branch.name} ${commits.length} ${Date.now()}"
+- - "@semantic-release/git"
+  - assets:
+    - CHANGELOG.md
+    - pyproject.toml
+    message: 'chore(release): ${nextRelease.notes}'
