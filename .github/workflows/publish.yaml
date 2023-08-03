@@ -9,17 +9,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-          token: ${{ steps.generate_token.outputs.token }}
-      
-      - name: Checkout semantic-release-exec-scripts
-        uses: actions/checkout@v3
-        with:
-          repository: VersesTech/semantic-release-exec-scripts
-          path: ${{ inputs.working-directory }}/semantic-release-exec-scripts
-          fetch-depth: 0
-          token: ${{ steps.generate_token.outputs.token }}
 
       - name: Configure AWS credentials for AWS CodeArtifact
         uses: aws-actions/configure-aws-credentials@v1
