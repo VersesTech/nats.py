@@ -1,4 +1,4 @@
-name: Release
+name: Publish
 on:
   push:
     branches:
@@ -29,7 +29,7 @@ jobs:
           # Note: CodeArtifact is in us-west-2, NOT us-west-1
           aws-region: us-west-2
           mask-aws-account-id: false
-          role-to-assume: arn:aws:iam::518625631402:role/github-codeartifact-write-role
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-codeartifact-write-role
           role-skip-session-tagging: true
           role-duration-seconds: 1200
       
@@ -53,6 +53,6 @@ jobs:
           poetry config repositories.verses-internal "${repo_url}"
           poetry publish --repository verses-internal --username aws --password "${repo_password}"
         env:
-          AWS_ACCOUNT_ID: '518625631402'
+          AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
           AWS_CODEARTIFACT_REPO_DOMAIN: versestech
           AWS_CODEARTIFACT_REPO_NAME: pypi-internal
